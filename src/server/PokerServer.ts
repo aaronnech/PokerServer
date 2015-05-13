@@ -70,10 +70,13 @@ class PokerServer {
 	 * @param {any} client The client socket
 	 */
 	private onClientDisconnect(client : any) {
-		var game = this.clientToGame[this.getUid(client)];
+		var uid = this.getUid(client);
+		var game = this.clientToGame[uid];
 
-		if (game)
+		if (game) {
 			game.removePlayer(client);
+			this.clientToGame[uid] = undefined;
+		}
 	}
 
 	/**
@@ -86,10 +89,24 @@ class PokerServer {
 	}
 
 	/**
+	 * Called when a game gets over.
+	 * @param {any} uidsToClients The clients in that game
+	 */
+	private onGameOver(uidsToClients : any) {
+		for (var uid in uidsToClients) {
+			if (uidsToClients.hasOwnProperty(uid)) {
+				this.clientToGame[uid] = undefined;
+			}
+		}
+	}
+
+	/**
 	 * Readys a new game to be filled.
 	 */
 	private readyNextGame() {
-		this.nextGame = new PokerGame();
+		this.nextGame = new PokerGame((players : any) => {
+			this.onGameOver(players);
+		});
 	}
 
 	/**

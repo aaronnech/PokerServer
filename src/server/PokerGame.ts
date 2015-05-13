@@ -11,7 +11,6 @@ class PokerGame {
 		GAME_OVER : 'game-over',
 		YOUR_TURN : 'your-turn',
 		WHAT_WAS_THAT : 'what-was-that',
-		SUCCESS : 'success',
 		CALL : 'call',
 		BET : 'bet',
 		FOLD : 'fold',
@@ -29,12 +28,13 @@ class PokerGame {
 	private players : any;
 	private playerNumbers : any;
 	private isStarted : boolean;
+	private gameOverCallback : Function;
 
 	// Game state
 	private table : any;
 	private currentTurn : any;
 
-	constructor() {
+	constructor(gameOverCallback : Function) {
 		// unique id
 		this.gameId = ++PokerGame.gameIdCounter;
 
@@ -44,6 +44,7 @@ class PokerGame {
 		this.playerCount = 0;
 		this.isStarted = false;
 		this.currentTurn = null;
+		this.gameOverCallback = gameOverCallback;
 
 		this.initTable();
 	}
@@ -88,6 +89,8 @@ class PokerGame {
 				this.players[uid].sendText(PokerGame.COMMANDS.GAME_OVER);
 			}
 		}
+
+		this.gameOverCallback(this.players);
 	}
 
 	/**
@@ -125,15 +128,13 @@ class PokerGame {
 				break;
 
 			case PokerGame.COMMANDS.CHECK:
-				this.currentTurn.check();
-				broadcast = PokerGame.COMMANDS.ALL_IN + ':' + num;
+				this.currentTurn.Check();
+				broadcast = PokerGame.COMMANDS.CHECK + ':' + num;
 				break;
 		}
 
 		if (broadcast != null) {
-			client.sendText(PokerGame.COMMANDS.SUCCESS);
 			// send the action to all other players
-			// 
 			for (var otherId in this.players) {
 				if (this.players.hasOwnProperty(otherId) && otherId != uid) {
 					this.players[otherId].sendText(broadcast);

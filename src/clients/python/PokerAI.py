@@ -1,12 +1,12 @@
 from ws4py.client.threadedclient import WebSocketClient
 
+# The commands in the poker protocol
 COMMANDS = {
     'NOT_STARTED' : 'not-started',
     'NOT_YOUR_TURN' : 'not-your-turn',
     'GAME_OVER' : 'game-over',
     'YOUR_TURN' : 'your-turn',
     'WHAT_WAS_THAT' : 'what-was-that',
-    'SUCCESS' : 'success',
     'CALL' : 'call',
     'BET' : 'bet',
     'FOLD' : 'fold',
@@ -16,18 +16,30 @@ COMMANDS = {
     'JOIN_GAME' : 'join-game'
 }
 
+
 class PokerClient(WebSocketClient):
+    """ Defines a Poker Websocket client """
+
     def opened(self):
+        """ Called when a socket is opened """
+        # Join a game!
+        self.joinGame()
+
+    def joinGame(self):
+        """ Called when we should join a game """
         self.send(COMMANDS['JOIN_GAME'])
 
     def closed(self, code, reason=None):
-        print "Closed down", code, reason
+        print "The server disconnected."
 
     def received_message(self, m):
+        """ Called when a message is recieved from te server """
+        # Split the message
         s = str(m)
-        print 'MSG RECIEVED: ' + s
-        left = s.split(':')[0] 
+        left = s.split(':')[0]
+        print 'debug -- MSG RECIEVED: ' + s
 
+        # Route the action to the AI
         if left == COMMANDS['WIN']:
             self.AI.win()
         elif left == COMMANDS['GAME_OVER']:
@@ -37,21 +49,27 @@ class PokerClient(WebSocketClient):
             self.AI.yourTurn(right.split(','))
 
     def fold(self):
+        """ Called when we should send FOLD """
         self.send(COMMANDS['FOLD'])
 
     def allIn(self):
+        """ Called when we should send ALL IN """
         self.send(COMMANDS['ALL_IN'])
 
-    def bet(self, amt):
+    def bet(self, amt=10):
+        """ Called when we should send BET """
         self.send(COMMANDS['FOLD'] + ':' + str(amt))
 
     def check(self):
+        """ Called when we should send CHECK """
         self.send(COMMANDS['CHECK'])
 
     def call(self):
+        """ Called when we should send CALL """
         self.send(COMMANDS['CALL'])
 
 class PokerAI:
+    """ Defines the AI Base class. AI implementations should extend this. """
     def start(self, url):
         self.ws = PokerClient(url, protocols=['http-only', 'chat'])
         self.ws.AI = self
@@ -59,12 +77,12 @@ class PokerAI:
         self.ws.connect()
         self.ws.run_forever()
 
-
     def gameOver(self):
-        print "game over"
+        print 'game over'
 
     def yourTurn(self, cards):
         print cards
+        self.respond.fold()
 
     def win(self):
         print 'win'
