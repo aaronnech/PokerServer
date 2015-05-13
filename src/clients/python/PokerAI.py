@@ -1,3 +1,7 @@
+# Author: Aaron Nech
+#
+# Python AI client for WebSocket PokerServer
+
 from ws4py.client.threadedclient import WebSocketClient
 
 # The commands in the poker protocol
@@ -25,10 +29,6 @@ class PokerClient(WebSocketClient):
         # Join a game!
         self.joinGame()
 
-    def joinGame(self):
-        """ Called when we should join a game """
-        self.send(COMMANDS['JOIN_GAME'])
-
     def closed(self, code, reason=None):
         print "The server disconnected."
 
@@ -47,6 +47,10 @@ class PokerClient(WebSocketClient):
         elif left == COMMANDS['YOUR_TURN']:
             right = s.split(':')[1]
             self.AI.yourTurn(right.split(','))
+
+    def joinGame(self):
+        """ Called when we should join a game """
+        self.send(COMMANDS['JOIN_GAME'])
 
     def fold(self):
         """ Called when we should send FOLD """
@@ -82,7 +86,6 @@ class PokerAI:
 
     def yourTurn(self, cards):
         print cards
-        self.respond.fold()
 
     def win(self):
         print 'win'

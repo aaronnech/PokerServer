@@ -4,7 +4,10 @@ var Poker = require('poker-engine');
  * A poker game simulation
  */
 class PokerGame {
-	private static MINIMUM_PLAYERS : number = 2;
+	// Minimum players to start a game
+	private static MINIMUM_PLAYERS : number = 3;
+
+	// Commands in the poker protocol
 	private static COMMANDS = {
 		NOT_STARTED : 'not-started',
 		NOT_YOUR_TURN : 'not-your-turn',
