@@ -13,6 +13,7 @@
 *.js
 *.map
 !src/client/vendor/*
+!src/server/engine/*
 node_modules
 node_modules/*
 
