@@ -17,6 +17,10 @@
 !src/server/engine/lib/*
 !src/server/engine/node_modules
 !src/server/engine/node_modules/*
+!src/server/engine/node_modules/events
+!src/server/engine/node_modules/events/*
+!src/server/engine/node_modules/events/tests
+!src/server/engine/node_modules/events/tests/*
 node_modules
 node_modules/*
 
