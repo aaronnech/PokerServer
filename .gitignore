@@ -14,6 +14,9 @@
 *.map
 !src/client/vendor/*
 !src/server/engine/*
+!src/server/engine/lib/*
+!src/server/engine/node_modules
+!src/server/engine/node_modules/*
 node_modules
 node_modules/*
 
