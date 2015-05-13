@@ -9,7 +9,6 @@
     "serve" : "npm run-script make && node src/server/main.js"
   },
   "dependencies": {
-    "poker-engine" : "latest",
     "nodejs-websocket" : "latest",
     "typescript" : "latest"
   },

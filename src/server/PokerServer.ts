@@ -1,15 +1,11 @@
 var ws = require("nodejs-websocket");
 import PokerGame = require('./PokerGame');
+import Protocol = require('./PokerProtocol');
 
 /**
  * A server that simulates poker.
  */
 class PokerServer {
-	private static COMMANDS = {
-		JOIN_GAME : 'join-game',
-		SPECTATE_GAME : 'spectate-game'
-	};
-
 	private server : any;
 
 	private nextGame : PokerGame;
@@ -49,7 +45,7 @@ class PokerServer {
 		var game = this.clientToGame[this.getUid(client)];
 
 		switch (data) {
-			case PokerServer.COMMANDS.JOIN_GAME:
+			case Protocol.JOIN_GAME:
 
 				if (!game)
 					this.joinGame(client);
@@ -101,11 +97,20 @@ class PokerServer {
 	}
 
 	/**
+	 * Called when the next game starts.
+	 */
+	private onGameStart() {
+		this.readyNextGame();
+	}
+
+	/**
 	 * Readys a new game to be filled.
 	 */
 	private readyNextGame() {
 		this.nextGame = new PokerGame((players : any) => {
 			this.onGameOver(players);
+		}, () => {
+			this.onGameStart();
 		});
 	}
 
@@ -119,11 +124,6 @@ class PokerServer {
 		console.log(uid + ' joining game ' + this.nextGame.getId());
 
 		this.nextGame.addPlayer(client);
-
-		if (this.nextGame.isGameFull()) {
-			this.readyNextGame();
-		}
-		
 	}
 }
 

@@ -1,26 +1,21 @@
-var Poker = require('poker-engine');
+import Protocol = require('./PokerProtocol');
+var Poker = require('./engine');
 
 /**
- * A poker game simulation
+ * A poker game simulation with remote players
  */
 class PokerGame {
 	// Minimum players to start a game
-	private static MINIMUM_PLAYERS : number = 3;
+	private static MINIMUM_PLAYERS : number = 2;
 
-	// Commands in the poker protocol
-	private static COMMANDS = {
-		NOT_STARTED : 'not-started',
-		NOT_YOUR_TURN : 'not-your-turn',
-		GAME_OVER : 'game-over',
-		YOUR_TURN : 'your-turn',
-		WHAT_WAS_THAT : 'what-was-that',
-		CALL : 'call',
-		BET : 'bet',
-		FOLD : 'fold',
-		ALL_IN : 'all_in',
-		CHECK : 'check',
-		WIN : 'win'
-	};
+	// Maximum players before we force-start the game
+	private static MAXIMUM_PLAYERS : number = 6;
+
+	// Count down interval in millisecs
+	private static COUNT_DOWN_INTERVAL : number = 1000;
+
+	// Count down number of intervals
+	private static COUNT_DOWN_NUMBER : number = 10;
 
 	// Unique id
 	private static gameIdCounter : number = 0;
@@ -32,12 +27,15 @@ class PokerGame {
 	private playerNumbers : any;
 	private isStarted : boolean;
 	private gameOverCallback : Function;
+	private startCallback : Function;
+	private countDown : any;
+	private countDownTimes : number;
 
 	// Game state
 	private table : any;
 	private currentTurn : any;
 
-	constructor(gameOverCallback : Function) {
+	constructor(gameOverCallback : Function, startCallback : Function) {
 		// unique id
 		this.gameId = ++PokerGame.gameIdCounter;
 
@@ -47,7 +45,11 @@ class PokerGame {
 		this.playerCount = 0;
 		this.isStarted = false;
 		this.currentTurn = null;
+		this.countDownTimes = 0;
+		this.countDown = null;
+
 		this.gameOverCallback = gameOverCallback;
+		this.startCallback = startCallback;
 
 		this.initTable();
 	}
@@ -80,7 +82,7 @@ class PokerGame {
 	private onPlayerTurn(player) {
 		this.currentTurn = player;
 		var uid = player.playerName;
-		this.players[uid].sendText(PokerGame.COMMANDS.YOUR_TURN + ':' + player.cards);
+		this.players[uid].sendText(Protocol.YOUR_TURN + ':' + player.GetHand().cards.join(','));
 	}
 
 	/**
@@ -89,7 +91,7 @@ class PokerGame {
 	private onGameOver() {
 		for (var uid in this.players) {
 			if (this.players.hasOwnProperty(uid)) {
-				this.players[uid].sendText(PokerGame.COMMANDS.GAME_OVER);
+				this.players[uid].sendText(Protocol.GAME_OVER);
 			}
 		}
 
@@ -108,43 +110,40 @@ class PokerGame {
 
 		var broadcast = null;
 		switch (split[0]) {
-			case PokerGame.COMMANDS.CALL:
+			case Protocol.CALL:
 				this.currentTurn.call();
-				broadcast = PokerGame.COMMANDS.CALL + ':' + num;
+				broadcast = Protocol.CALL + ':' + num;
 				break;
 
-			case PokerGame.COMMANDS.BET:
+			case Protocol.BET:
 				if (split.length > 1 && !isNaN(parseInt(split[1]))) {
 					this.currentTurn.bet(parseInt(split[1]));
-					broadcast = PokerGame.COMMANDS.BET + ':' + split[1] + ':' + num;
+					broadcast = Protocol.BET + ':' + split[1] + ':' + num;
 				}
 				break;
 
-			case PokerGame.COMMANDS.FOLD:
+			case Protocol.FOLD:
 				this.currentTurn.fold();
-				broadcast = PokerGame.COMMANDS.FOLD + ':' + num;
+				broadcast = Protocol.FOLD + ':' + num;
 				break;
 
-			case PokerGame.COMMANDS.ALL_IN:
+			case Protocol.ALL_IN:
 				this.currentTurn.allIn();
-				broadcast = PokerGame.COMMANDS.ALL_IN + ':' + num;
+				broadcast = Protocol.ALL_IN + ':' + num;
 				break;
 
-			case PokerGame.COMMANDS.CHECK:
+			case Protocol.CHECK:
 				this.currentTurn.Check();
-				broadcast = PokerGame.COMMANDS.CHECK + ':' + num;
+				broadcast = Protocol.CHECK + ':' + num;
 				break;
 		}
 
 		if (broadcast != null) {
-			// send the action to all other players
-			for (var otherId in this.players) {
-				if (this.players.hasOwnProperty(otherId) && otherId != uid) {
-					this.players[otherId].sendText(broadcast);
-				}
-			}
+			// Notify all players what just happened
+			this.broadcastToPlayers(broadcast);
 		} else {
-			client.sendText(PokerGame.COMMANDS.WHAT_WAS_THAT);
+			// Nothing happened, so we didn't understand the action
+			client.sendText(Protocol.WHAT_WAS_THAT);
 		}
 	}
 
@@ -157,7 +156,7 @@ class PokerGame {
 		var uid = this.currentTurn.playerName;
 		var client = this.players[uid];
 
-		client.sendText(PokerGame.COMMANDS.WIN);
+		client.sendText(Protocol.WIN);
 	}
 
 	/**
@@ -173,6 +172,8 @@ class PokerGame {
 	 * @param {any} client The client socket
 	 */
 	public addPlayer(client : any) {
+		if (this.isStarted) return false;
+
 		var uid = this.getUid(client);
 		this.players[uid] = client;
 		this.playerNumbers[uid] = this.playerCount;
@@ -183,9 +184,57 @@ class PokerGame {
 		    chips: 300
 		});
 
-		console.log(this.playerCount + ' players now.');
+		console.log(this.playerCount + ' players now in game ' + this.gameId);
+
 		if (this.isGameFull()) {
+			this.stopCountDown();
 			this.startGame();
+		} else if (this.hasSufficientPlayers()) {
+			this.stopCountDown();
+			this.startCountDown();
+		}
+
+		return true;
+	}
+
+	/**
+	 * Starts the countdown to play
+	 */
+	private startCountDown() {
+		this.countDownTimes = PokerGame.COUNT_DOWN_NUMBER;
+		this.countDown = setInterval(() => {
+			this.countDownTimes--;
+			if (this.countDownTimes <= 0) {
+				this.stopCountDown();
+				this.startGame();
+			} else {
+				console.log('starting in... ' + this.countDownTimes);
+				this.broadcastToPlayers(
+					Protocol.GAME_STARTING_IN + ':' + this.countDownTimes);
+			}
+		}, PokerGame.COUNT_DOWN_INTERVAL);
+	}
+
+	/**
+	 * Stops the countdown to play
+	 */
+	private stopCountDown() {
+		if (this.countDown == null) return;
+
+		clearInterval(this.countDown);
+		this.countDownTimes = PokerGame.COUNT_DOWN_NUMBER;
+	}
+
+	/**
+	 * Sends a message to the whole room
+	 * @param {string} msg The message to send
+	 */
+	public broadcastToPlayers(msg : string) {
+		// send to all players
+		for (var uid in this.players) {
+			if (this.players.hasOwnProperty(uid) && this.players[uid]) {
+				this.players[uid].sendText(msg);
+			}
 		}
 	}
 
@@ -194,25 +243,43 @@ class PokerGame {
 	 * @param {any} client The client socket
 	 */
 	public removePlayer(client : any) {
+		// Remove from game
 		var uid = this.getUid(client);
+		this.table.removePlayer(uid);
+
+		// Delete reference
 		this.players[uid] = undefined;
 		this.playerNumbers[uid] = undefined;
+
+		// Subtract player count
 		this.playerCount--;
+
+		// If we were going to start, make sure we still can
+		if (this.countDown != null && !this.hasSufficientPlayers()) {
+			this.stopCountDown();
+		}
 	}
 
 	/**
 	 * Starts the game
 	 */
 	public startGame() {
-		console.log('starting game!');
 		this.isStarted = true;
 		this.table.startGame();
+		this.startCallback();
 	}
 
 	/**
 	 * @return true if the game is full, false otherwise.
 	 */
 	public isGameFull() {
+		return this.playerCount >= PokerGame.MAXIMUM_PLAYERS;
+	}
+
+	/**
+	 * @return true if the game has enough players to start, false otherwise.
+	 */
+	public hasSufficientPlayers() {
 		return this.playerCount >= PokerGame.MINIMUM_PLAYERS;
 	}
 
@@ -225,11 +292,11 @@ class PokerGame {
 		var uid = this.getUid(client);
 
 		if (!this.isStarted) {
-			client.sendText(PokerGame.COMMANDS.NOT_STARTED);
+			client.sendText(Protocol.NOT_STARTED);
 		} else if(this.currentTurn && this.currentTurn.playerName == uid) {
 			this.onPlayerMove(data);
 		} else {
-			client.sendText(PokerGame.COMMANDS.NOT_YOUR_TURN);
+			client.sendText(Protocol.NOT_YOUR_TURN);
 		}
 	}
 
