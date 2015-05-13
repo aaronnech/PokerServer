@@ -8,7 +8,9 @@
     "bundle-spectator" : "cd src/spectator; ../../node_modules/.bin/browserify -t reactify main.js -o static/js/main.js; cd ../..",
 
     "make" : "npm run-script compile-ts && npm run-script bundle-spectator",
-    "serve" : "npm run-script make && node src/server/main.js"
+    "serve" : "npm run-script make && node src/server/main.js",
+
+    "start" : "npm run-script serve"
   },
   "dependencies": {
     "nodejs-websocket" : "latest",
