@@ -11,8 +11,16 @@ class PokerServer {
 
 	private server : any;
 
+	// Holds the next waiting game
 	private nextGame : PokerGame;
+
+	// Map from all currently running game ids to their objects
+	private currentGames : any;
+
+	// Map from client to their game
 	private clientToGame : any;
+
+	// Map from active client ids to their sockets
 	private connections : any;
 
 	/**
@@ -21,6 +29,7 @@ class PokerServer {
 	 */
 	constructor(port : number) {
 		this.readyNextGame();
+		this.currentGames = {};
 		this.clientToGame = {};
 		this.connections = {};
 
@@ -43,7 +52,11 @@ class PokerServer {
 		client.chips = PokerServer.STARTING_CHIPS;
 
 		client.on("text", (str) => {
-			this.onClientData(client, str);
+			try	{
+				this.onClientData(client, str);
+			} catch (e) {
+				// Do nothing
+			}
 		});
 
 		client.on("close", (code, reason) => {
@@ -67,8 +80,13 @@ class PokerServer {
 
 				break;
 
+			case Protocol.SPECTATE_GAME:
+				//  If we're not in a game, spectate one!
+				if (!game)
+					this.spectateGame(client);
+
 			default:
-				// Route all over messages to their contingent games
+				// Route all other messages to their contingent games
 				if (game)
 					game.onPlayerData(client, data);
 
@@ -102,31 +120,40 @@ class PokerServer {
 
 	/**
 	 * Called when a game gets over.
-	 * @param {any} uidsToClients The clients in that game
+	 * @param {PokerGame} game The game that ended
+	 * @param {any} uidsToClients The players in that game
+	 * @param {any[]} spectators The spectators in that game
 	 */
-	private onGameOver(uidsToClients : any) {
-		for (var uid in uidsToClients) {
-			if (uidsToClients.hasOwnProperty(uid)) {
+	private onGameOver(game : PokerGame, uidsToPlayers : any, spectators : any[]) {
+		for (var uid in uidsToPlayers) {
+			if (uidsToPlayers.hasOwnProperty(uid)) {
 				this.clientToGame[uid] = undefined;
 			}
 		}
+
+		for (var i = 0; i < spectators.length; i++) {
+			this.clientToGame[this.getUid(spectators[i])] = undefined;
+		}
+
+		this.currentGames[game.getId()] = undefined;
 	}
 
 	/**
 	 * Called when the next game starts.
 	 */
-	private onGameStart() {
+	private onGameStart(game : PokerGame) {
 		this.readyNextGame();
+		this.currentGames[game.getId()] = game;
 	}
 
 	/**
 	 * Readys a new game to be filled.
 	 */
 	private readyNextGame() {
-		this.nextGame = new PokerGame((players : any) => {
-			this.onGameOver(players);
-		}, () => {
-			this.onGameStart();
+		this.nextGame = new PokerGame((game, players, spectators) => {
+			this.onGameOver(game, players, spectators);
+		}, (game) => {
+			this.onGameStart(game);
 		});
 	}
 
@@ -145,6 +172,45 @@ class PokerServer {
 		}
 
 		this.nextGame.addPlayer(client, client.chips);
+	}
+
+	/**
+	 * Retrieves a game currently running
+	 * (no specification on which game)
+	 * @return {PokerGame} the game, null if none are found
+	 */
+	private getRunningGame() {
+		for (var id in this.currentGames) {
+			if (this.currentGames.hasOwnProperty(id) &&
+				typeof(this.currentGames[id]) != 'undefined') {
+				return this.currentGames[id];
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Called when a client wants to spectate a game.
+	 * @param {any} client The client socket
+	 */
+	private spectateGame(client : any) {
+		var findGame = () => {
+			var game = this.getRunningGame();
+			if (game != null) {
+				return game;
+			} else {
+				return this.nextGame;
+			}
+		};
+
+		var uid = this.getUid(client);
+		var game = findGame();
+		this.clientToGame[uid] = game;
+
+		console.log(uid + ' spectating game ' + game.getId());
+
+		game.addSpectator(client);
 	}
 }
 

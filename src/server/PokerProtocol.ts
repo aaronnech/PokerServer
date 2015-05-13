@@ -9,17 +9,17 @@ class PokerProtocol {
 	public static CALL : string = 'call';
 	public static BET : string = 'bet';
 	public static FOLD : string = 'fold';
-	public static ALL_IN : string = 'all_in';
+	public static ALL_IN : string = 'all-in';
 	public static CHECK : string = 'check';
 	public static WIN : string = 'win';
 	public static DEAL : string = 'deal';
-	public static FLOP : string = 'flop';
 	public static JOIN_GAME : string = 'join-game';
 	public static SPECTATE_GAME : string = 'spectate-game';
-	public static ROUND_OVER : string = 'round-over';
+	public static SHOW_CARD : string = 'show-card';
 	public static PLAYER_LEFT : string = 'player-left';
 	public static PLAYER_JOIN : string = 'player-join';
 	public static YOU_ARE : string = 'you-are';
+	public static SHOWDOWN : string = 'showdown';
 }
 
 export = PokerProtocol;

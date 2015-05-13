@@ -5,6 +5,9 @@ class RandomAI(PokerAI):
 	def gameOver(self):
 		self.respond.joinGame()
 
+	def identity(self, id):
+		print id
+
 	def yourTurn(self):
 		decisions = [
 			self.respond.call,
@@ -21,10 +24,10 @@ class RandomAI(PokerAI):
 	def deal(self, cards):
 		print cards
 
-	def flop(self, cards):
-		print cards
+	def playerAction(self, index, action):
+		print index
 
-	def roundOver(self, card):
+	def showCard(self, card):
 	    print card
 
 

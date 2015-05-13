@@ -5,6 +5,10 @@ var Poker = require('./engine');
  * A poker game simulation with remote players
  */
 class PokerGame {
+	// Time to delay between turns
+	private static MIN_SPECTATOR_DELAY : number = 1000;
+	private static MAX_SPECTATOR_DELAY : number = 3000;
+
 	// Minimum players to start a game
 	private static MINIMUM_PLAYERS : number = 2;
 
@@ -15,7 +19,7 @@ class PokerGame {
 	private static COUNT_DOWN_INTERVAL : number = 1000;
 
 	// Count down number of intervals
-	private static COUNT_DOWN_NUMBER : number = 10;
+	private static COUNT_DOWN_NUMBER : number = 5;
 
 	// Unique id
 	private static gameIdCounter : number = 0;
@@ -24,6 +28,7 @@ class PokerGame {
 	// Administrative
 	private playerCount : number;
 	private players : any;
+	private spectators : any[];
 	private playerNumbers : any;
 	private isStarted : boolean;
 	private gameOverCallback : Function;
@@ -45,8 +50,10 @@ class PokerGame {
 	constructor(gameOverCallback : Function, startCallback : Function) {
 		// unique id
 		this.gameId = ++PokerGame.gameIdCounter;
+		PokerGame.gameIdCounter %= 2000000000;
 
 		// Setup
+		this.spectators = [];
 		this.players = {};
 		this.playerNumbers = {};
 		this.playerCount = 0;
@@ -73,12 +80,8 @@ class PokerGame {
 			this.onPlayerDeal(player);
 		});
 
-		this.table.on("flop", (cards) => {
-			this.onFlop(cards);
-		});
-
-		this.table.on("roundOver", (card) => {
-			this.onRoundOver(card);
+		this.table.on("showCard", (card) => {
+			this.onShowCard(card);
 		});
 
 		this.table.on("turn", (player) => {
@@ -89,25 +92,32 @@ class PokerGame {
 		    this.onPlayerWin(player, prize);
 		});
 
+		this.table.on("roundShowDown", () => {
+			this.onShowDown();
+		});
+
 		this.table.on("gameOver", () => {
 		    this.onGameOver();
 		});
 	}
 
 	/**
-	 * Called when the flop happens
-	 * @param {string[]} cards The 3 cards flopped
+	 * Called when showdown happens revealing all cards
 	 */
-	private onFlop(cards : string[]) {
-		this.broadcastToPlayers(Protocol.FLOP + ':' + cards.join(','));
+	private onShowDown() {
+		this.table.forEachPlayers((player) => {
+			var uid = player.playerName
+			var num = this.playerNumbers[uid];
+			this.broadcastToPlayers(Protocol.SHOWDOWN + ':' + num + ':' + player.cards.join(','));
+		});
 	}
 
 	/**
-	 * Called when the round is over
+	 * Called when a card is revealed in the middle
 	 * @param {string} card The card shown
 	 */
-	private onRoundOver(card : string) {
-		this.broadcastToPlayers(Protocol.ROUND_OVER + ':' + card);
+	private onShowCard(card : string) {
+		this.broadcastToPlayers(Protocol.SHOW_CARD + ':' + card);
 	}
 
 	/**
@@ -117,7 +127,8 @@ class PokerGame {
 	private onPlayerDeal(player) {
 		this.currentTurn = player;
 		var uid = player.playerName;
-		this.players[uid].sendText(Protocol.DEAL + ':' + player.cards.join(','));
+		if (this.players[uid])
+			this.players[uid].sendText(Protocol.DEAL + ':' + player.cards.join(','));
 	}
 
 	/**
@@ -125,9 +136,16 @@ class PokerGame {
 	 * @param {any} player Poker Player
 	 */
 	private onPlayerTurn(player) {
-		this.currentTurn = player;
+		this.currentTurn = null;
 		var uid = player.playerName;
-		this.players[uid].sendText(Protocol.YOUR_TURN);
+		var time = Math.random() * (PokerGame.MAX_SPECTATOR_DELAY - PokerGame.MIN_SPECTATOR_DELAY)
+				 + PokerGame.MIN_SPECTATOR_DELAY;
+
+		setTimeout(() => {
+			this.currentTurn = player;
+			if (this.players[uid])
+				this.players[uid].sendText(Protocol.YOUR_TURN);
+		}, time);
 	}
 
 	/**
@@ -136,7 +154,7 @@ class PokerGame {
 	private onGameOver() {
 		this.broadcastToPlayers(Protocol.GAME_OVER);
 
-		this.gameOverCallback(this.players);
+		this.gameOverCallback(this, this.players, this.spectators);
 	}
 
 	/**
@@ -184,7 +202,8 @@ class PokerGame {
 			this.broadcastToPlayers(broadcast);
 		} else {
 			// Nothing happened, so we didn't understand the action
-			client.sendText(Protocol.WHAT_WAS_THAT);
+			if (this.players[uid])
+				client.sendText(Protocol.WHAT_WAS_THAT);
 		}
 	}
 
@@ -207,7 +226,8 @@ class PokerGame {
 			}
 		}
 
-		client.sendText(Protocol.WIN + ':' + prize);
+		if (this.players[uid])
+			client.sendText(Protocol.WIN + ':' + prize);
 	}
 
 	/**
@@ -228,7 +248,8 @@ class PokerGame {
 
 		// Let everyone know someone joined
 		this.broadcastToPlayers(Protocol.PLAYER_JOIN + ':' + this.playerCount);
-		client.sendText(Protocol.YOU_ARE + ':' + this.playerCount);
+		if (this.players[uid])
+			client.sendText(Protocol.YOU_ARE + ':' + this.playerCount);
 
 		// Update administrative variables
 		var uid = this.getUid(client);
@@ -251,6 +272,16 @@ class PokerGame {
 	}
 
 	/**
+	 * Adds a spectator to the game
+	 * @param {any} client The client socket
+	 */
+	public addSpectator(client : any) {
+		// Update administrative variables
+		var uid = this.getUid(client);
+		this.spectators.push(client);
+	}
+
+	/**
 	 * Checks to see if we can start the game
 	 */
 	private checkStart() {
@@ -258,6 +289,7 @@ class PokerGame {
 			this.stopCountDown();
 			this.startGame();
 		} else if (this.hasSufficientPlayers()) {
+			console.log(this.playerCount + ' Players');
 			this.stopCountDown();
 			this.startCountDown();
 		}
@@ -287,11 +319,9 @@ class PokerGame {
 	 * Stops the countdown to play
 	 */
 	private stopCountDown() {
-		if (this.countDown == null) return;
-
-		clearInterval(this.countDown);
+		if (this.countDown != null)
+			clearInterval(this.countDown);
 		this.countDown = null;
-		this.countDownTimes = PokerGame.COUNT_DOWN_NUMBER;
 	}
 
 	/**
@@ -305,6 +335,12 @@ class PokerGame {
 				typeof(this.players[uid]) != 'undefined') {
 				this.players[uid].sendText(msg);
 			}
+		}
+
+		// send to all spectators
+		for (var i = 0; i < this.spectators.length; i++) {
+			if (this.spectators[i])
+				this.spectators[i].sendText(msg);
 		}
 	}
 
@@ -324,16 +360,14 @@ class PokerGame {
 
 		// Remove from game
 		console.log('removing player ' + uid + ' from game ' + this.gameId);
+		this.table.removePlayer(uid);
 
 		// See if we're in the middle of a game
 		if (this.isStarted) {
-			// If they leave on their turn, do a check for them
+			// If they leave on their turn, do a fold() for them
 			if (this.currentTurn && this.currentTurn.playerName == uid) {
-				this.currentTurn.Check();
+				this.currentTurn.fold();
 			}
-
-			// Remove from table
-			this.table.removePlayer(uid);
 		} else {
 			this.updateStartingQueue();
 		}
@@ -348,8 +382,11 @@ class PokerGame {
 	private updateStartingQueue() {
 		this.stopCountDown();
 
-		// Save players to transfer over
-		var savedPlayers = this.table.players.slice(0);
+		// Save players to transfer over (skipping empty seats)
+		var savedPlayers = [];
+		this.table.forEachPlayers((player) => {
+			savedPlayers.push(player);
+		});
 
 		// Reinitialize the table
 		this.initTable();
@@ -357,8 +394,8 @@ class PokerGame {
 		// Replace players (no empty seats)
 		for (var i = 0; i < savedPlayers.length; i++) {
 			this.table.addPlayer({
-			    playerName : savedPlayers.playerName,
-			    chips : savedPlayers.chips
+			    playerName : savedPlayers[i].playerName,
+			    chips : savedPlayers[i].chips
 			});
 		}
 
@@ -369,9 +406,10 @@ class PokerGame {
 	 * Starts the game
 	 */
 	public startGame() {
+		console.log('starting game..');
 		this.isStarted = true;
 		this.table.startGame();
-		this.startCallback();
+		this.startCallback(this);
 	}
 
 	/**
@@ -396,6 +434,7 @@ class PokerGame {
 	public onPlayerData(client : any, data : string) {
 		var uid = this.getUid(client);
 
+		// Don't listen to any clients that aren't in their turn.
 		if (this.currentTurn && this.currentTurn.playerName == uid) {
 			this.onPlayerMove(data);
 		}

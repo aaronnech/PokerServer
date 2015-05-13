@@ -14,15 +14,14 @@ COMMANDS = {
     'CALL' : 'call',
     'BET' : 'bet',
     'FOLD' : 'fold',
-    'ALL_IN' : 'all_in',
+    'ALL_IN' : 'all-in',
     'CHECK' : 'check',
     'WIN' : 'win',
     'JOIN_GAME' : 'join-game',
     'DEAL' : 'deal',
-    'FLOP' : 'flop',
-    'ROUND_OVER' : 'round-over'
+    'SHOW_CARD' : 'show-card',
+    'YOU_ARE' : 'you-are'
 }
-
 
 class PokerClient(WebSocketClient):
     """ Defines a Poker Websocket client """
@@ -30,7 +29,7 @@ class PokerClient(WebSocketClient):
     def opened(self):
         """ Called when a socket is opened """
         # Join a game!
-        self.joinGame()
+        self.send(COMMANDS['JOIN_GAME'])
 
     def closed(self, code, reason=None):
         print "The server disconnected."
@@ -40,7 +39,6 @@ class PokerClient(WebSocketClient):
         # Split the message
         s = str(m)
         left = s.split(':')[0]
-        print 'debug -- MSG RECIEVED: ' + s
 
         # Route the action to the AI
         if left == COMMANDS['WIN']:
@@ -50,48 +48,61 @@ class PokerClient(WebSocketClient):
             self.AI.gameOver()
         elif left == COMMANDS['YOUR_TURN']:
             self.AI.yourTurn()
-        elif left == COMMANDS['FLOP']:
-            right = s.split(':')[1]
-            self.AI.flop(right.split(','));
         elif left == COMMANDS['DEAL']:
             right = s.split(':')[1]
             self.AI.deal(right.split(','));
-        elif left == COMMANDS['ROUND_OVER']:
+        elif left == COMMANDS['SHOW_CARD']:
             right = s.split(':')[1]
-            self.AI.roundOver(right);
+            self.AI.showCard(right);
+        elif left in ['fold', 'check', 'call', 'bet', 'all-in']:
+            index = s.split(':')
+            index = index[len(index) - 1]
+            self.AI.playerAction(index, m)
+        elif left == COMMANDS['YOU_ARE']:
+            right = s.split(':')[1]
+            self.AI.identity(right);
+
+class Response:
+    """ Simple class to wrap responses and pass them on """
+    def __init__(self, pokerClient):
+        self.client = pokerClient
 
     def joinGame(self):
         """ Called when we should join a game """
-        self.send(COMMANDS['JOIN_GAME'])
+        self.client.send(COMMANDS['JOIN_GAME'])
 
     def fold(self):
         """ Called when we should send FOLD """
-        self.send(COMMANDS['FOLD'])
+        self.client.send(COMMANDS['FOLD'])
 
     def allIn(self):
         """ Called when we should send ALL IN """
-        self.send(COMMANDS['ALL_IN'])
+        self.client.send(COMMANDS['ALL_IN'])
 
     def bet(self, amt=10):
         """ Called when we should send BET """
-        self.send(COMMANDS['FOLD'] + ':' + str(amt))
+        self.client.send(COMMANDS['FOLD'] + ':' + str(amt))
 
     def check(self):
         """ Called when we should send CHECK """
-        self.send(COMMANDS['CHECK'])
+        self.client.send(COMMANDS['CHECK'])
 
     def call(self):
         """ Called when we should send CALL """
-        self.send(COMMANDS['CALL'])
+        self.client.send(COMMANDS['CALL'])
 
 class PokerAI:
     """ Defines the AI Base class. AI implementations should extend this. """
     def start(self, url):
         self.ws = PokerClient(url, protocols=['http-only', 'chat'])
         self.ws.AI = self
-        self.respond = self.ws
+        self.respond = Response(self.ws)
+
         self.ws.connect()
         self.ws.run_forever()
+
+    def identity(self, id):
+        print id
 
     def gameOver(self):
         print 'game over'
@@ -102,10 +113,10 @@ class PokerAI:
     def deal(self, cards):
         print cards
 
-    def flop(self, cards):
-        print cards
+    def playerAction(self, index, action):
+        print index
 
-    def roundOver(self, card):
+    def showCard(self, card):
         print card
 
     def win(self, chips):
