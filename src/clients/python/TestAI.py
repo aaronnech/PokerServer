@@ -5,7 +5,7 @@ class RandomAI(PokerAI):
 	def gameOver(self):
 		self.respond.joinGame()
 
-	def yourTurn(self, cards):
+	def yourTurn(self):
 		decisions = [
 			self.respond.call,
 			self.respond.fold,
@@ -15,8 +15,17 @@ class RandomAI(PokerAI):
 		]
 		random.choice(decisions)()
 
-	def win(self):
-		print 'I WON!'
+	def win(self, chips):
+		print 'I WON ' + str(chips)
+
+	def deal(self, cards):
+		print cards
+
+	def flop(self, cards):
+		print cards
+
+	def roundOver(self, card):
+	    print card
 
 
 ai = RandomAI()

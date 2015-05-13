@@ -6,14 +6,23 @@ import Protocol = require('./PokerProtocol');
  * A server that simulates poker.
  */
 class PokerServer {
+	// Chips each player starts with
+	private static STARTING_CHIPS : number = 300;
+
 	private server : any;
 
 	private nextGame : PokerGame;
 	private clientToGame : any;
+	private connections : any;
 
+	/**
+	 * Constructs a new PokerServer on the given port
+	 * @param {number} port The port
+	 */
 	constructor(port : number) {
 		this.readyNextGame();
 		this.clientToGame = {};
+		this.connections = {};
 
 		this.server = ws.createServer((conn) => {
 		    this.onClientConnect(conn);
@@ -27,12 +36,18 @@ class PokerServer {
 	 * @param {any} client The client socket
 	 */
 	private onClientConnect(client : any) {
+		var uid = this.getUid(client);
+		this.connections[uid] = client;
+
+		// give the client their initial currency.
+		client.chips = PokerServer.STARTING_CHIPS;
+
 		client.on("text", (str) => {
 			this.onClientData(client, str);
 		});
 
 		client.on("close", (code, reason) => {
-			this.onClientDisconnect(client);
+			this.onClientDisconnect(uid);
 		});
 	}
 
@@ -46,14 +61,14 @@ class PokerServer {
 
 		switch (data) {
 			case Protocol.JOIN_GAME:
-
+				// If we haven't join a game, join one!
 				if (!game)
 					this.joinGame(client);
 
 				break;
 
 			default:
-				
+				// Route all over messages to their contingent games
 				if (game)
 					game.onPlayerData(client, data);
 
@@ -63,14 +78,15 @@ class PokerServer {
 
 	/**
 	 * Called when a client disconnects from the poker server.
-	 * @param {any} client The client socket
+	 * @param {string} uid The client socket uid
 	 */
-	private onClientDisconnect(client : any) {
-		var uid = this.getUid(client);
+	private onClientDisconnect(uid : string) {
 		var game = this.clientToGame[uid];
+		this.connections[uid] = undefined;
+		console.log('client ' + uid + ' disconnected');
 
 		if (game) {
-			game.removePlayer(client);
+			game.removePlayer(uid);
 			this.clientToGame[uid] = undefined;
 		}
 	}
@@ -123,7 +139,12 @@ class PokerServer {
 		this.clientToGame[uid] = this.nextGame;
 		console.log(uid + ' joining game ' + this.nextGame.getId());
 
-		this.nextGame.addPlayer(client);
+		// Ensure we have at least the minimum chips
+		if (client.chips < PokerServer.STARTING_CHIPS) {
+			client.chips = PokerServer.STARTING_CHIPS;
+		}
+
+		this.nextGame.addPlayer(client, client.chips);
 	}
 }
 

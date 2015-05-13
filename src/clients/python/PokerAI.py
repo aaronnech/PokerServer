@@ -17,7 +17,10 @@ COMMANDS = {
     'ALL_IN' : 'all_in',
     'CHECK' : 'check',
     'WIN' : 'win',
-    'JOIN_GAME' : 'join-game'
+    'JOIN_GAME' : 'join-game',
+    'DEAL' : 'deal',
+    'FLOP' : 'flop',
+    'ROUND_OVER' : 'round-over'
 }
 
 
@@ -41,12 +44,21 @@ class PokerClient(WebSocketClient):
 
         # Route the action to the AI
         if left == COMMANDS['WIN']:
-            self.AI.win()
+            right = s.split(':')[1]
+            self.AI.win(int(right))
         elif left == COMMANDS['GAME_OVER']:
             self.AI.gameOver()
         elif left == COMMANDS['YOUR_TURN']:
+            self.AI.yourTurn()
+        elif left == COMMANDS['FLOP']:
             right = s.split(':')[1]
-            self.AI.yourTurn(right.split(','))
+            self.AI.flop(right.split(','));
+        elif left == COMMANDS['DEAL']:
+            right = s.split(':')[1]
+            self.AI.deal(right.split(','));
+        elif left == COMMANDS['ROUND_OVER']:
+            right = s.split(':')[1]
+            self.AI.roundOver(right);
 
     def joinGame(self):
         """ Called when we should join a game """
@@ -84,9 +96,18 @@ class PokerAI:
     def gameOver(self):
         print 'game over'
 
-    def yourTurn(self, cards):
+    def yourTurn(self):
+        print 'your turn'
+
+    def deal(self, cards):
         print cards
 
-    def win(self):
+    def flop(self, cards):
+        print cards
+
+    def roundOver(self, card):
+        print card
+
+    def win(self, chips):
         print 'win'
 
