@@ -20,7 +20,8 @@ COMMANDS = {
     'JOIN_GAME' : 'join-game',
     'DEAL' : 'deal',
     'SHOW_CARD' : 'show-card',
-    'YOU_ARE' : 'you-are'
+    'YOU_ARE' : 'you-are',
+    'GAME_STARTED' : 'game-started'
 }
 
 class PokerClient(WebSocketClient):
@@ -29,7 +30,7 @@ class PokerClient(WebSocketClient):
     def opened(self):
         """ Called when a socket is opened """
         # Join a game!
-        self.send(COMMANDS['JOIN_GAME'])
+        self.send(COMMANDS['JOIN_GAME'] + ':' + self.name)
 
     def closed(self, code, reason=None):
         print "The server disconnected."
@@ -61,6 +62,9 @@ class PokerClient(WebSocketClient):
         elif left == COMMANDS['YOU_ARE']:
             right = s.split(':')[1]
             self.AI.identity(right);
+        elif left == COMMANDS['GAME_STARTED']:
+            right = s.split(':')[1]
+            self.AI.gameStart(right);
 
 class Response:
     """ Simple class to wrap responses and pass them on """
@@ -69,7 +73,7 @@ class Response:
 
     def joinGame(self):
         """ Called when we should join a game """
-        self.client.send(COMMANDS['JOIN_GAME'])
+        self.client.send(COMMANDS['JOIN_GAME'] + ':' + self.client.name)
 
     def fold(self):
         """ Called when we should send FOLD """
@@ -93,13 +97,17 @@ class Response:
 
 class PokerAI:
     """ Defines the AI Base class. AI implementations should extend this. """
-    def start(self, url):
+    def start(self, url, name):
         self.ws = PokerClient(url, protocols=['http-only', 'chat'])
         self.ws.AI = self
+        self.ws.name = name
         self.respond = Response(self.ws)
 
         self.ws.connect()
         self.ws.run_forever()
+
+    def gameStart(self, people):
+        print people
 
     def identity(self, id):
         print id

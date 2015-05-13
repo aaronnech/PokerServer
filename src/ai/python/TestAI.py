@@ -2,6 +2,12 @@ import random
 from PokerAI import PokerAI
 
 class RandomAI(PokerAI):
+	def gameStart(self, people):
+		""" Called when the game starts, and is passed
+			a comma-seperated list of id,name pairs of people
+			playing (names cannot have commas) """
+		print people
+
 	def gameOver(self):
 		""" Called when the game is over """
 		# joins another game
@@ -45,10 +51,11 @@ class RandomAI(PokerAI):
 
 	def showCard(self, card):
 		""" Called when a card is shown in the community hand, such as when we flop or
-			when a betting round ends """
-	    print card
+			when a betting round ends 
+		"""
+		print card
 
 
 ai = RandomAI()
-ai.start('ws://localhost:1337')
+ai.start('ws://localhost:1337', 'MyIsRandom')
 

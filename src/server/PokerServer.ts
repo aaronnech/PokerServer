@@ -72,11 +72,24 @@ class PokerServer {
 	private onClientData(client : any, data : string) {
 		var game = this.clientToGame[this.getUid(client)];
 
-		switch (data) {
+		var protocol = data.split(':')[0];
+
+		switch (protocol) {
 			case Protocol.JOIN_GAME:
+				var split = data.split(':');
+
+				// Get a name
+				var name = "Untitled";
+				if (split.length > 1) {
+					name = split[1].replace(',', '');
+					// TODO: limit length?
+				}
+
+				console.log(name + 'is joining...');
+
 				// If we haven't join a game, join one!
 				if (!game)
-					this.joinGame(client);
+					this.joinGame(client, name);
 
 				break;
 
@@ -122,7 +135,7 @@ class PokerServer {
 	 * Called when a game gets over.
 	 * @param {PokerGame} game The game that ended
 	 * @param {any} uidsToClients The players in that game
-	 * @param {any[]} spectators The spectators in that game
+	 * @param {any} spectators The spectators in that game
 	 */
 	private onGameOver(game : PokerGame, uidsToPlayers : any, spectators : any[]) {
 		for (var uid in uidsToPlayers) {
@@ -131,8 +144,10 @@ class PokerServer {
 			}
 		}
 
-		for (var i = 0; i < spectators.length; i++) {
-			this.clientToGame[this.getUid(spectators[i])] = undefined;
+		for (var uid in spectators) {
+			if (spectators.hasOwnProperty(uid)) {
+				this.clientToGame[uid] = undefined;
+			}
 		}
 
 		this.currentGames[game.getId()] = undefined;
@@ -161,7 +176,7 @@ class PokerServer {
 	 * Called when a client wants to join a game.
 	 * @param {any} client The client socket
 	 */
-	private joinGame(client : any) {
+	private joinGame(client : any, name : string) {
 		var uid = this.getUid(client);
 		this.clientToGame[uid] = this.nextGame;
 		console.log(uid + ' joining game ' + this.nextGame.getId());
@@ -171,7 +186,7 @@ class PokerServer {
 			client.chips = PokerServer.STARTING_CHIPS;
 		}
 
-		this.nextGame.addPlayer(client, client.chips);
+		this.nextGame.addPlayer(client, name, client.chips);
 	}
 
 	/**
@@ -195,22 +210,12 @@ class PokerServer {
 	 * @param {any} client The client socket
 	 */
 	private spectateGame(client : any) {
-		var findGame = () => {
-			var game = this.getRunningGame();
-			if (game != null) {
-				return game;
-			} else {
-				return this.nextGame;
-			}
-		};
-
 		var uid = this.getUid(client);
-		var game = findGame();
-		this.clientToGame[uid] = game;
+		this.clientToGame[uid] = this.nextGame;
 
-		console.log(uid + ' spectating game ' + game.getId());
+		console.log(uid + ' spectating game ' + this.nextGame.getId());
 
-		game.addSpectator(client);
+		this.nextGame.addSpectator(client);
 	}
 }
 

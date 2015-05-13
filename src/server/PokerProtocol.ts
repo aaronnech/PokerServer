@@ -3,6 +3,7 @@
  */
 class PokerProtocol {
 	public static GAME_OVER : string = 'game-over';
+	public static GAME_STARTED : string = 'game-started';
 	public static YOUR_TURN : string = 'your-turn';
 	public static WHAT_WAS_THAT : string = 'what-was-that';
 	public static GAME_STARTING_IN : string = 'start-in';

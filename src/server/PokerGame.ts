@@ -28,8 +28,9 @@ class PokerGame {
 	// Administrative
 	private playerCount : number;
 	private players : any;
-	private spectators : any[];
+	private spectators : any;
 	private playerNumbers : any;
+	private playerNames : any;
 	private isStarted : boolean;
 	private gameOverCallback : Function;
 	private startCallback : Function;
@@ -53,9 +54,10 @@ class PokerGame {
 		PokerGame.gameIdCounter %= 2000000000;
 
 		// Setup
-		this.spectators = [];
+		this.spectators = {};
 		this.players = {};
 		this.playerNumbers = {};
+		this.playerNames = {};
 		this.playerCount = 0;
 		this.isStarted = false;
 		this.currentTurn = null;
@@ -241,13 +243,14 @@ class PokerGame {
 	/**
 	 * Adds a player to the game
 	 * @param {any} client The client socket
+	 * @param {string} name The client name
 	 * @param {number} startingChips The amount of starting chips
 	 */
-	public addPlayer(client : any, chips : number) {
+	public addPlayer(client : any, name : string, chips : number) {
 		if (this.isStarted) return false;
 
 		// Let everyone know someone joined
-		this.broadcastToPlayers(Protocol.PLAYER_JOIN + ':' + this.playerCount);
+		this.broadcastToPlayers(Protocol.PLAYER_JOIN + ':' + this.playerCount + ',' + name);
 		if (this.players[uid])
 			client.sendText(Protocol.YOU_ARE + ':' + this.playerCount);
 
@@ -255,6 +258,7 @@ class PokerGame {
 		var uid = this.getUid(client);
 		this.players[uid] = client;
 		this.playerNumbers[uid] = this.playerCount;
+		this.playerNames[uid] = name;
 		this.playerCount++;
 
 		// Add the player to the game
@@ -263,7 +267,7 @@ class PokerGame {
 		    chips : chips
 		});
 
-		console.log(uid + ' now has ' + chips + ' chips');
+		console.log(uid + '(' + name + ') now has ' + chips + ' chips');
 		console.log(this.playerCount + ' players now in game ' + this.gameId);
 
 		this.checkStart();
@@ -278,7 +282,7 @@ class PokerGame {
 	public addSpectator(client : any) {
 		// Update administrative variables
 		var uid = this.getUid(client);
-		this.spectators.push(client);
+		this.spectators[uid] = client;
 	}
 
 	/**
@@ -338,9 +342,11 @@ class PokerGame {
 		}
 
 		// send to all spectators
-		for (var i = 0; i < this.spectators.length; i++) {
-			if (this.spectators[i])
-				this.spectators[i].sendText(msg);
+		for (var uid in this.spectators) {
+			if (this.spectators.hasOwnProperty(uid) &&
+				typeof(this.spectators[uid]) != 'undefined') {
+				this.spectators[uid].sendText(msg);
+			}
 		}
 	}
 
@@ -349,6 +355,13 @@ class PokerGame {
 	 * @param {string} uid The client socket uid
 	 */
 	public removePlayer(uid : string) {
+		// Remove any spectators with the id
+		if(this.spectators[uid])
+			this.spectators[uid] = undefined;
+
+		// If we don't have a player, exit now
+		if (!this.players[uid]) return;
+
 		var num = this.playerNumbers[uid];
 
 		// Subtract player count
@@ -356,11 +369,13 @@ class PokerGame {
 
 		// Delete reference
 		this.players[uid] = undefined;
+		this.playerNames[uid] = undefined;
 		this.playerNumbers[uid] = undefined;
 
 		// Remove from game
 		console.log('removing player ' + uid + ' from game ' + this.gameId);
 		this.table.removePlayer(uid);
+		this.broadcastToPlayers(Protocol.PLAYER_LEFT + ':' + num);
 
 		// See if we're in the middle of a game
 		if (this.isStarted) {
@@ -368,11 +383,13 @@ class PokerGame {
 			if (this.currentTurn && this.currentTurn.playerName == uid) {
 				this.currentTurn.fold();
 			}
+
+			if (this.playerCount <= 1) {
+				this.onGameOver();
+			}
 		} else {
 			this.updateStartingQueue();
 		}
-
-		this.broadcastToPlayers(Protocol.PLAYER_LEFT + ':' + num);
 	}
 
 	/**
@@ -403,12 +420,27 @@ class PokerGame {
 	}
 
 	/**
+	 * @return {string} a comma seperated value list of
+	 *                    player number,player name pairs
+	 */
+	private getPlayerCSV() {
+		var result = [];
+		this.table.forEachPlayers((player) => {
+			var uid = player.playerName;
+			result.push(this.playerNumbers[uid] + ',' + this.playerNames[uid]);
+		});
+
+		return result.join(',');
+	}
+
+	/**
 	 * Starts the game
 	 */
 	public startGame() {
 		console.log('starting game..');
 		this.isStarted = true;
 		this.table.startGame();
+		this.broadcastToPlayers(Protocol.GAME_STARTED + ':' + this.getPlayerCSV());
 		this.startCallback(this);
 	}
 

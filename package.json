@@ -5,12 +5,17 @@
   "scripts": {
     "compile-ts": "cd src; find . -name \"*.ts\" | xargs ../node_modules/.bin/tsc --module commonjs; cd ..",
 
-    "make" : "npm run-script compile-ts",
+    "bundle-spectator" : "cd src/spectator; ../../node_modules/.bin/browserify -t reactify main.js -o static/js/main.js; cd ../..",
+
+    "make" : "npm run-script compile-ts && npm run-script bundle-spectator",
     "serve" : "npm run-script make && node src/server/main.js"
   },
   "dependencies": {
     "nodejs-websocket" : "latest",
-    "typescript" : "latest"
+    "browserify" : "latest",
+    "typescript" : "latest",
+    "reactify" : "latest",
+    "react" : "latest"
   },
   "author": "Aaron Nech",
   "license": "N/A"
