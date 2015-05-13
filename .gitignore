@@ -12,6 +12,8 @@
 *.log
 *.js
 *.map
+node_modules
+node_modules/*
 !src/client/vendor/*
 !src/server/engine/*
 !src/server/engine/lib/*
@@ -21,8 +23,6 @@
 !src/server/engine/node_modules/events/*
 !src/server/engine/node_modules/events/tests
 !src/server/engine/node_modules/events/tests/*
-node_modules
-node_modules/*
 
 
 # Created by https://www.gitignore.io
