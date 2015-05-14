@@ -1,5 +1,6 @@
 import Protocol = require('./PokerProtocol');
-var Poker = require('./engine');
+import PokerEngineAdapter = require('./PokerEngineAdapter');
+import NodePokerEngineAdapter = require('./NodePokerEngineAdapter');
 
 /**
  * A poker game simulation with remote players
@@ -46,7 +47,7 @@ class PokerGame {
 	private playerWait : any;
 
 	// Game state
-	private table : any;
+	private engineAdapter : PokerEngineAdapter;
 	private currentTurn : any;
 
 	/**
@@ -83,29 +84,29 @@ class PokerGame {
 	private initTable() {
 		// Game state setup
 		// min blind, max blind, min players, max players
-		this.table = new Poker.Table(10, 20, 2, 6);
+		this.engineAdapter = new NodePokerEngineAdapter(10, 20, 2, 6);
 
-		this.table.on("deal", (player) => {
+		this.engineAdapter.on("deal", (player) => {
 			this.onPlayerDeal(player);
 		});
 
-		this.table.on("showCard", (card) => {
+		this.engineAdapter.on("showCard", (card) => {
 			this.onShowCard(card);
 		});
 
-		this.table.on("turn", (player) => {
+		this.engineAdapter.on("turn", (player) => {
 			this.onPlayerTurn(player);
 		});
 
-		this.table.on("win", (player, prize) => {
+		this.engineAdapter.on("win", (player, prize) => {
 		    this.onPlayerWin(player, prize);
 		});
 
-		this.table.on("roundShowDown", () => {
+		this.engineAdapter.on("roundShowDown", () => {
 			this.onShowDown();
 		});
 
-		this.table.on("gameOver", () => {
+		this.engineAdapter.on("gameOver", () => {
 		    this.onGameOver();
 		});
 	}
@@ -114,7 +115,7 @@ class PokerGame {
 	 * Called when showdown happens revealing all cards
 	 */
 	private onShowDown() {
-		this.table.forEachPlayers((player) => {
+		this.engineAdapter.forEachPlayers((player) => {
 			var uid = player.playerName
 			var num = this.playerNumbers[uid];
 			this.broadcastToPlayers(Protocol.SHOWDOWN + ':' + num + ':' + player.cards.join(','));
@@ -244,8 +245,8 @@ class PokerGame {
 		var client = this.players[uid];
 
 		// Update the chips
-		for (var i = 0; i < this.table.players.length; i++) {
-			var player = this.table.players[i];
+		for (var i = 0; i < this.engineAdapter.getPlayerObjs().length; i++) {
+			var player = this.engineAdapter.getPlayerObjs()[i];
 			var id = player.playerName;
 
 			if (this.players[id]) {
@@ -287,7 +288,7 @@ class PokerGame {
 		this.playerCount++;
 
 		// Add the player to the game
-		this.table.addPlayer({
+		this.engineAdapter.addPlayer({
 		    playerName : uid,
 		    chips : chips
 		});
@@ -399,7 +400,7 @@ class PokerGame {
 
 		// Remove from game
 		console.log('removing player ' + uid + ' from game ' + this.gameId);
-		this.table.removePlayer(uid);
+		this.engineAdapter.removePlayer(uid);
 		this.broadcastToPlayers(Protocol.PLAYER_LEFT + ':' + num);
 
 		// See if we're in the middle of a game
@@ -426,7 +427,7 @@ class PokerGame {
 
 		// Save players to transfer over (skipping empty seats)
 		var savedPlayers = [];
-		this.table.forEachPlayers((player) => {
+		this.engineAdapter.forEachPlayers((player) => {
 			savedPlayers.push(player);
 		});
 
@@ -435,7 +436,7 @@ class PokerGame {
 
 		// Replace players (no empty seats)
 		for (var i = 0; i < savedPlayers.length; i++) {
-			this.table.addPlayer({
+			this.engineAdapter.addPlayer({
 			    playerName : savedPlayers[i].playerName,
 			    chips : savedPlayers[i].chips
 			});
@@ -450,7 +451,7 @@ class PokerGame {
 	 */
 	private getPlayerCSV() {
 		var result = [];
-		this.table.forEachPlayers((player) => {
+		this.engineAdapter.forEachPlayers((player) => {
 			var uid = player.playerName;
 			result.push(this.playerNumbers[uid] + ',' + this.playerNames[uid]);
 		});
@@ -464,7 +465,7 @@ class PokerGame {
 	public startGame() {
 		console.log('starting game..');
 		this.isStarted = true;
-		this.table.startGame();
+		this.engineAdapter.startGame();
 		this.broadcastToPlayers(Protocol.GAME_STARTED + ':' + this.getPlayerCSV());
 		this.startCallback(this);
 	}
