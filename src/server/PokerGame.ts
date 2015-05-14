@@ -130,7 +130,7 @@ class PokerGame {
 		this.currentTurn = player;
 		var uid = player.playerName;
 		if (this.players[uid])
-			this.players[uid].sendText(Protocol.DEAL + ':' + player.cards.join(','));
+			this.players[uid].send(Protocol.DEAL + ':' + player.cards.join(','));
 	}
 
 	/**
@@ -146,7 +146,7 @@ class PokerGame {
 		setTimeout(() => {
 			this.currentTurn = player;
 			if (this.players[uid])
-				this.players[uid].sendText(Protocol.YOUR_TURN);
+				this.players[uid].send(Protocol.YOUR_TURN);
 		}, time);
 	}
 
@@ -205,7 +205,7 @@ class PokerGame {
 		} else {
 			// Nothing happened, so we didn't understand the action
 			if (this.players[uid])
-				client.sendText(Protocol.WHAT_WAS_THAT);
+				client.send(Protocol.WHAT_WAS_THAT);
 		}
 	}
 
@@ -229,7 +229,7 @@ class PokerGame {
 		}
 
 		if (this.players[uid])
-			client.sendText(Protocol.WIN + ':' + prize);
+			client.send(Protocol.WIN + ':' + prize);
 	}
 
 	/**
@@ -252,7 +252,7 @@ class PokerGame {
 		// Let everyone know someone joined
 		this.broadcastToPlayers(Protocol.PLAYER_JOIN + ':' + this.playerCount + ',' + name);
 		if (this.players[uid])
-			client.sendText(Protocol.YOU_ARE + ':' + this.playerCount);
+			client.send(Protocol.YOU_ARE + ':' + this.playerCount);
 
 		// Update administrative variables
 		var uid = this.getUid(client);
@@ -337,7 +337,7 @@ class PokerGame {
 		for (var uid in this.players) {
 			if (this.players.hasOwnProperty(uid) &&
 				typeof(this.players[uid]) != 'undefined') {
-				this.players[uid].sendText(msg);
+				this.players[uid].send(msg);
 			}
 		}
 
@@ -345,7 +345,7 @@ class PokerGame {
 		for (var uid in this.spectators) {
 			if (this.spectators.hasOwnProperty(uid) &&
 				typeof(this.spectators[uid]) != 'undefined') {
-				this.spectators[uid].sendText(msg);
+				this.spectators[uid].send(msg);
 			}
 		}
 	}

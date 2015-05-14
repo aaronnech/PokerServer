@@ -57,5 +57,5 @@ class RandomAI(PokerAI):
 
 
 ai = RandomAI()
-ai.start('ws://45.55.179.213:1337', 'MyIsRandom')
+ai.start('ws://45.55.179.213:8080', 'MyIsRandom')
 

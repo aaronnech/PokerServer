@@ -1,4 +1,4 @@
-var ws = require("nodejs-websocket");
+var WebSocketServer = require("ws").Server;
 import PokerGame = require('./PokerGame');
 import Protocol = require('./PokerProtocol');
 
@@ -27,17 +27,25 @@ class PokerServer {
 	 * Constructs a new PokerServer on the given port
 	 * @param {number} port The port
 	 */
-	constructor(port : number) {
+	constructor(port : number, httpServer ?: any) {
 		this.readyNextGame();
 		this.currentGames = {};
 		this.clientToGame = {};
 		this.connections = {};
 
-		this.server = ws.createServer({secure : false}, (conn) => {
-		    this.onClientConnect(conn);
-		}).listen(port);
+		if (httpServer) {
+			this.server = new WebSocketServer({server : httpServer});
+		} else {
+			this.server = new WebSocketServer({port : port});
+		}
 
-		console.log('listening on port ' + port);
+		this.server.on('open', () => {
+			console.log('listening on port ' + port);
+		});
+
+		this.server.on("connection", (client) => {
+			this.onClientConnect(client);
+		});
 	}
 
 	/**
@@ -51,7 +59,7 @@ class PokerServer {
 		// give the client their initial currency.
 		client.chips = PokerServer.STARTING_CHIPS;
 
-		client.on("text", (str) => {
+		client.on("message", (str) => {
 			try	{
 				this.onClientData(client, str);
 			} catch (e) {

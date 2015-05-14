@@ -13,7 +13,7 @@
     "start" : "npm run-script serve"
   },
   "dependencies": {
-    "nodejs-websocket" : "latest",
+    "ws" : "latest",
     "browserify" : "latest",
     "typescript" : "latest",
     "reactify" : "latest",
