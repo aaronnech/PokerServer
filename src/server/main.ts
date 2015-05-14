@@ -11,7 +11,7 @@ var app = express()
 var port = process.env.PORT || 1337
 
 // Serve the spectator
-app.use(express.static(__dirname + "../spectator/static"));
+app.use(express.static(__dirname + "/../spectator/static/"));
 
 // Create our server
 var server = http.createServer(app);

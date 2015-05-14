@@ -478,7 +478,7 @@ class PokerGame {
 	 * @return {string} the Uid
 	 */
 	private getUid(client : any) {
-		return client.socket.remoteAddress + ':' + client.socket.remotePort;
+		return client.uuid;
 	}
 }
 

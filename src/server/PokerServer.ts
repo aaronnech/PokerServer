@@ -1,4 +1,6 @@
 var WebSocketServer = require("ws").Server;
+var uuid = require('node-uuid');
+
 import PokerGame = require('./PokerGame');
 import Protocol = require('./PokerProtocol');
 
@@ -39,9 +41,7 @@ class PokerServer {
 			this.server = new WebSocketServer({port : port});
 		}
 
-		this.server.on('open', () => {
-			console.log('listening on port ' + port);
-		});
+		console.log('listening on port ' + port);
 
 		this.server.on("connection", (client) => {
 			this.onClientConnect(client);
@@ -53,7 +53,8 @@ class PokerServer {
 	 * @param {any} client The client socket
 	 */
 	private onClientConnect(client : any) {
-		var uid = this.getUid(client);
+		var uid = uuid.v4() + (new Date()).getTime();
+		client.uuid = uid;
 		this.connections[uid] = client;
 
 		// give the client their initial currency.
@@ -136,7 +137,7 @@ class PokerServer {
 	 * @return {string} the Uid
 	 */
 	private getUid(client : any) {
-		return client.socket.remoteAddress + ':' + client.socket.remotePort;
+		return client.uuid;
 	}
 
 	/**

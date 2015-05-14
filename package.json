@@ -18,6 +18,7 @@
     "typescript" : "latest",
     "reactify" : "latest",
     "react" : "latest",
+    "node-uuid" : "latest",
     "express" : "latest"
   },
   "author": "Aaron Nech",
