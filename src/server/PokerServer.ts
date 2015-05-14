@@ -33,7 +33,7 @@ class PokerServer {
 		this.clientToGame = {};
 		this.connections = {};
 
-		this.server = ws.createServer({secure : true}, (conn) => {
+		this.server = ws.createServer({secure : false}, (conn) => {
 		    this.onClientConnect(conn);
 		}).listen(port);
 
