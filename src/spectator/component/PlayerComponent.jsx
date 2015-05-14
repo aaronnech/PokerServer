@@ -14,7 +14,7 @@ var PlayerComponent = React.createClass({
         return {
             cards : null,
             lastAction : null,
-            chips : this.props.chips
+            chips : this.props.player.chips
         };
     },
 
