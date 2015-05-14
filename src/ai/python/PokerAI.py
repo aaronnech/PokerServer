@@ -47,7 +47,7 @@ class PokerClient(WebSocketClient):
             self.AI.win(int(right))
         elif left == COMMANDS['GAME_OVER']:
             self.AI.gameOver()
-        elif left == COMMANDS['YOUR_TURN']:
+        elif left == COMMANDS['YOUR_TURN'] or left == COMMANDS['WHAT_WAS_THAT']:
             self.AI.yourTurn()
         elif left == COMMANDS['DEAL']:
             right = s.split(':')[1]

@@ -74,7 +74,7 @@ var PlayerComponent = React.createClass({
             }
         });
 
-        api.bind('BET', this, function(action, person, amt) {
+        api.bind('BET', this, function(action, amt, person) {
             if (person == index) {
                 // This is us
                 this.setState({lastAction : action + ' $' + amt});
