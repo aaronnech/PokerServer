@@ -85,7 +85,7 @@ class Response:
 
     def bet(self, amt=10):
         """ Called when we should send BET """
-        self.client.send(COMMANDS['FOLD'] + ':' + str(amt))
+        self.client.send(COMMANDS['BET'] + ':' + str(amt))
 
     def check(self):
         """ Called when we should send CHECK """
