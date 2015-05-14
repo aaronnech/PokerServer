@@ -13,7 +13,8 @@ var PlayerComponent = React.createClass({
     getInitialState : function() {
         return {
             cards : null,
-            lastAction : null
+            lastAction : null,
+            chips : this.props.chips
         };
     },
 
@@ -80,6 +81,13 @@ var PlayerComponent = React.createClass({
                 this.setState({lastAction : action + ' $' + amt});
             }
         });
+
+        api.bind('BET_MADE', this, function(action, amt, person) {
+            if (person == index) {
+                // This is us
+                this.setState({chips : this.state.chips - parseInt(amt)});
+            }
+        })
     },
 
     /**
@@ -95,6 +103,7 @@ var PlayerComponent = React.createClass({
         return (
             <div className="player">
                 <p><strong>{name}</strong>:</p>
+                <p>Money: {chips}$</p>
                 <p>Cards: {cards ? cards : '-,-'}</p>
                 <p>Last Action: {action ? action : 'N/A'}</p>
             </div>

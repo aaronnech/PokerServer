@@ -4,7 +4,7 @@ from PokerAI import PokerAI
 class RandomAI(PokerAI):
 	def gameStart(self, people):
 		""" Called when the game starts, and is passed
-			a comma-seperated list of id,name pairs of people
+			a comma-seperated list of id,name,money triples of people
 			playing (names cannot have commas) """
 		print people
 

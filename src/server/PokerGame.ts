@@ -84,7 +84,8 @@ class PokerGame {
 	private initTable() {
 		// Game state setup
 		// min blind, max blind, min players, max players
-		this.engineAdapter = new NodePokerEngineAdapter(10, 20, 2, 6);
+		this.engineAdapter = new NodePokerEngineAdapter(
+			10, 20, PokerGame.MINIMUM_PLAYERS, PokerGame.MAXIMUM_PLAYERS);
 
 		this.engineAdapter.on("deal", (player) => {
 			this.onPlayerDeal(player);
@@ -164,7 +165,7 @@ class PokerGame {
 		this.currentTurn = null;
 		var uid = player.playerName;
 		var time = Math.random() * (PokerGame.MAX_SPECTATOR_DELAY - PokerGame.MIN_SPECTATOR_DELAY)
-				 + PokerGame.MIN_SPECTATOR_DELAY;
+			+ PokerGame.MIN_SPECTATOR_DELAY;
 
 		setTimeout(() => {
 			this.currentTurn = player;
@@ -472,7 +473,8 @@ class PokerGame {
 		var result = [];
 		this.engineAdapter.forEachPlayers((player) => {
 			var uid = player.playerName;
-			result.push(this.playerNumbers[uid] + ',' + this.playerNames[uid]);
+			var chips = player.chips;
+			result.push(this.playerNumbers[uid] + ',' + this.playerNames[uid] + ',' + chips);
 		});
 
 		return result.join(',');

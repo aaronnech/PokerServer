@@ -49,10 +49,11 @@ var AppComponent = React.createClass({
         api.bind('GAME_STARTED', this, function(action, people) {
             var split = people.split(',');
             var players = [];
-            for (var i = 0; i < split.length; i += 2) {
+            for (var i = 0; i < split.length; i += 3) {
                 players.push({
                     index : split[i],
-                    name : split[i + 1]
+                    name : split[i + 1],
+                    chips : parseInt(split[i + 2])
                 });
             }
 
