@@ -97,6 +97,7 @@ var PlayerComponent = React.createClass({
         var player = this.props.player;
         var index = player.index;
         var name = player.name;
+        var chips = this.state.chips;
         var cards = this.state.cards;
         var action = this.state.lastAction;
 
