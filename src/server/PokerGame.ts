@@ -9,6 +9,9 @@ class PokerGame {
 	private static MIN_SPECTATOR_DELAY : number = 1000;
 	private static MAX_SPECTATOR_DELAY : number = 3000;
 
+	// Time to wait for player to make their turn
+	private static PLAYER_WAIT_TIME : number = 20000;
+
 	// Minimum players to start a game
 	private static MINIMUM_PLAYERS : number = 2;
 
@@ -39,6 +42,9 @@ class PokerGame {
 	private countDown : any;
 	private countDownTimes : number;
 
+	// Wait for player timeout
+	private playerWait : any;
+
 	// Game state
 	private table : any;
 	private currentTurn : any;
@@ -63,6 +69,7 @@ class PokerGame {
 		this.currentTurn = null;
 		this.countDownTimes = 0;
 		this.countDown = null;
+		this.playerWait = null;
 
 		this.gameOverCallback = gameOverCallback;
 		this.startCallback = startCallback;
@@ -145,8 +152,15 @@ class PokerGame {
 
 		setTimeout(() => {
 			this.currentTurn = player;
-			if (this.players[uid])
+			if (this.players[uid]) {
 				this.players[uid].send(Protocol.YOUR_TURN);
+
+				// Give the player a time limit, fold if they
+				// don't respond.
+				this.playerWait = setTimeout(() => {
+					player.fold();
+				}, PokerGame.PLAYER_WAIT_TIME)
+			}
 		}, time);
 	}
 
@@ -177,9 +191,14 @@ class PokerGame {
 				break;
 
 			case Protocol.BET:
-				if (split.length > 1 && !isNaN(parseInt(split[1]))) {
-					this.currentTurn.bet(parseInt(split[1]));
-					broadcast = Protocol.BET + ':' + split[1] + ':' + num;
+				if (split.length > 1) {
+					var amount = parseInt(split[1]);
+					if (!isNaN(amount) &&
+							amount > 0 &&
+							amount <= client.chips) {
+						this.currentTurn.bet(parseInt(split[1]));
+						broadcast = Protocol.BET + ':' + split[1] + ':' + num;
+					}
 				}
 				break;
 
@@ -200,6 +219,12 @@ class PokerGame {
 		}
 
 		if (broadcast != null) {
+			// Clear player wait time
+			if (this.playerWait) {
+				clearTimeout(this.playerWait);
+				this.playerWait = null;
+			}
+
 			// Notify all players what just happened
 			this.broadcastToPlayers(broadcast);
 		} else {
