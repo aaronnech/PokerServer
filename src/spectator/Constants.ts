@@ -4,7 +4,8 @@
 class Constants {
 	public static SCREENS : any = {
 		WAITING : 0,
-		SPECTATE : 1,
+		STARTING : 1,
+		SPECTATE : 2
 	};
 }
 

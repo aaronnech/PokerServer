@@ -28,7 +28,8 @@ var AppComponent = React.createClass({
             active : Constants.SCREENS.LOADING,
             API : api,
             revealedCards : [],
-            players : []
+            players : [],
+            timeTilStart : ''
         };
     },
 
@@ -59,6 +60,12 @@ var AppComponent = React.createClass({
             self.setScreenLater(Constants.SCREENS.SPECTATE)()
         });
 
+        api.bind('GAME_STARTING_IN', this, function(action, time) {
+            self.setState({timeTilStart : time});
+            if (self.state.active != Constants.SCREENS.STARTING)
+                self.setScreenLater(Constants.SCREENS.STARTING)()
+        });
+
         api.bind('GAME_OVER', this, function(action) {
             setTimeout(function() { 
                 self.setState({revealedCards : [], players : []});
@@ -77,12 +84,16 @@ var AppComponent = React.createClass({
      */
     render : function() {
         var isLoading = (this.state.active == Constants.SCREENS.LOADING);
+        var isStarting = (this.state.active == Constants.SCREENS.STARTING);
         var isSpectate = (this.state.active == Constants.SCREENS.SPECTATE);
 
         return (
             <div id="app">
                 <div className={"screen " + (isLoading ? "active" : "")}>
                     <p>Searching for game....</p>
+                </div>
+                <div className={"screen " + (isStarting ? "active" : "")}>
+                    <p>Found Game! Starting in {this.state.timeTilStart} seconds</p>
                 </div>
                 <div className={"screen " + (isSpectate ? "active" : "")}>
                     <p>Community Cards: {this.state.revealedCards.join(',')}</p>
