@@ -17,7 +17,8 @@
     "browserify" : "latest",
     "typescript" : "latest",
     "reactify" : "latest",
-    "react" : "latest"
+    "react" : "latest",
+    "express" : "latest"
   },
   "author": "Aaron Nech",
   "license": "N/A"
