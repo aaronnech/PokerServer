@@ -332,6 +332,10 @@ class PokerGame {
 		this.countDownTimes = PokerGame.COUNT_DOWN_NUMBER;
 		this.countDown = setInterval(() => {
 			if (this.countDown == null) return;
+			if (!this.hasSufficientPlayers()) {
+				this.stopCountDown();
+				return;
+			}
 
 			this.countDownTimes--;
 			if (this.countDownTimes <= 0) {
