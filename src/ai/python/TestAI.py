@@ -55,6 +55,12 @@ class RandomAI(PokerAI):
 		"""
 		print card
 
+	def betMade(self, amt, who):
+		""" Called when a bet is made by anyone. The player index is passed along with the
+			amount bet
+		"""
+		print amt
+
 
 ai = RandomAI()
 ai.start('ws://pokerbots.herokuapp.com/', 'MyIsRandom')

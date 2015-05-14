@@ -21,7 +21,8 @@ COMMANDS = {
     'DEAL' : 'deal',
     'SHOW_CARD' : 'show-card',
     'YOU_ARE' : 'you-are',
-    'GAME_STARTED' : 'game-started'
+    'GAME_STARTED' : 'game-started',
+    'BET_MADE' : 'bet-made'
 }
 
 class PokerClient(WebSocketClient):
@@ -52,6 +53,10 @@ class PokerClient(WebSocketClient):
         elif left == COMMANDS['DEAL']:
             right = s.split(':')[1]
             self.AI.deal(right.split(','));
+        elif left == COMMANDS['BET_MADE']:
+            amt = s.split(':')[1]
+            who = s.split(':')[2]
+            self.AI.betMade(amt, who);
         elif left == COMMANDS['SHOW_CARD']:
             right = s.split(':')[1]
             self.AI.showCard(right);
@@ -120,6 +125,9 @@ class PokerAI:
 
     def deal(self, cards):
         print cards
+
+    def betMade(self, amt, who):
+        print amt
 
     def playerAction(self, index, action):
         print index

@@ -14,6 +14,7 @@ class PokerProtocol {
 	public static CHECK : string = 'check';
 	public static WIN : string = 'win';
 	public static DEAL : string = 'deal';
+	public static BET_MADE : string 'bet-made';
 	public static JOIN_GAME : string = 'join-game';
 	public static SPECTATE_GAME : string = 'spectate-game';
 	public static SHOW_CARD : string = 'show-card';

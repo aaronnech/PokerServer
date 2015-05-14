@@ -94,6 +94,10 @@ class PokerGame {
 			this.onShowCard(card);
 		});
 
+		this.engineAdapter.on("betMade", (player, bet) => {
+			this.onBetMade(player, bet);
+		});
+
 		this.engineAdapter.on("turn", (player) => {
 			this.onPlayerTurn(player);
 		});
@@ -139,6 +143,17 @@ class PokerGame {
 		var uid = player.playerName;
 		if (this.players[uid])
 			this.players[uid].send(Protocol.DEAL + ':' + player.cards.join(','));
+	}
+
+	/**
+	 * Called when a player successfully makes a bet.
+	 * @param {any} player Poker Player
+	 * @param {number} bet The amount bet
+	 */
+	private onBetMade(player, bet) {
+		var uid = player.playerName;
+		var num = this.playerNumbers[uid];
+		this.broadcastToPlayers(Protocol.BET_MADE + ':' + bet + ':' + num);
 	}
 
 	/**

@@ -91,6 +91,8 @@ Player.prototype.SimpleBet = function(bet) {
     }
 
 
+    this.table.emit('betMade', this.table.players[index], protectedBet);
+
     return true;
 };
 
