@@ -5,7 +5,7 @@
   "scripts": {
     "compile-ts": "cd src; find . -name \"*.ts\" | xargs ../node_modules/.bin/tsc --module commonjs; cd ..",
 
-    "bundle-spectator" : "cd src/poker/spectator; ../../../node_modules/.bin/browserify -t reactify main.js -o static/js/main.js; cd ../../..",
+    "bundle-spectator" : "./node_modules/.bin/browserify -t reactify src/poker/spectator/main.js -o src/poker/spectator/static/js/main.js",
 
     "make" : "npm run-script compile-ts && npm run-script bundle-spectator",
     "serve" : "npm run-script make && node src/poker/server/main.js",
