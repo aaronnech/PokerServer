@@ -1,0 +1,58 @@
+{
+  "name": "poker-engine",
+  "description": "Event-based poker engine for node.",
+  "version": "0.0.5",
+  "homepage": "https://github.com/romanzubenko/poker-engine",
+  "keywords": [
+    "poker",
+    "texas",
+    "holdhem",
+    "tournament",
+    "cards"
+  ],
+  "author": {
+    "name": "Roman Zubenko"
+  },
+  "main": "index",
+  "files": [
+    "lib",
+    "index.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/romanzubenko/poker-engine"
+  },
+  "engines": {
+    "node": ">=0.10.26",
+    "npm": ">=1.2.10"
+  },
+  "dependencies": {
+    "events": "*"
+  },
+  "devDependencies": {
+    "mocha": "*"
+  },
+  "licenses": [
+    {
+      "type": "BSD"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/romanzubenko/poker-engine/issues"
+  },
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "test"
+  },
+  "license": "BSD",
+  "readme": "## Node-Poker\nEvent based poker engine for node.\n\nPlease note that the project is still early in development, and some changes can be not backward compatible. \n\n## Installation\n\n```bash\n$ npm install poker-engine\n```\n\n## Usage:\n```js\nvar Poker = require(\"poker-engine\");\n\n// pass init parameters, and optional array of players to initialize a table\nvar table = poker.newTable({\n\tminBlind: 10,\n\tmaxBlind: 20,\n\tmaxPlayers : 6\n},[\n\t{\n\t\tplayerName : \"johnnyboy\",\n\t\tchips: 100\n\t},\n\t{\n\t\tplayerName : \"bobbyboy\",\n\t\tchips: 200\n\t},\n]); \n\n// or add a player when you need it\ntable.addPlayer({\n\tplayerName : \"robbyboy\",\n\tchips: 300\n});\n\n\n// start a table!\ntable.startGame();\n```\n\n## Events:\n```js\ntable.on(\"turn\",function(player){\n\tplayer.call();\n\t// or\n\t// player.bet(20)\n\t// player.fold()\n\t// player.allIn()\n\t// player.check()\n});\n\n\ntable.on(\"win\",function(player,prize){\n\t// custom logic executed upon win\n});\n\ntable.on(\"gameOver\",function(){\n\ttable.initNewRound()\n});\n\n```\n\n\n## Roadmap\n1. Tests in Mocha\n2. Player model to be extendable\n3. Comprehensive event docs",
+  "readmeFilename": "README.md",
+  "_id": "poker-engine@0.0.5",
+  "dist": {
+    "shasum": "565c9b2140f21cc1761929ff66d27f9571d438ba"
+  },
+  "_from": "poker-engine@latest",
+  "_resolved": "https://registry.npmjs.org/poker-engine/-/poker-engine-0.0.5.tgz"
+}
