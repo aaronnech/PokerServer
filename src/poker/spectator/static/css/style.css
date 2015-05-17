@@ -1,7 +1,90 @@
+@font-face {
+    font-family: Bebas;
+    src: url('../font/BebasNeue.otf');
+}
+
+body, html {
+	font-family: Bebas;
+	background: url('../img/bg.png') repeat;
+	color: #ccc;
+}
+
 .screen.active {
 	display: block;
 }
 
 .screen {
 	display: none;
+}
+
+.header {
+	text-align: center;
+	width: 100%;
+}
+
+.clear { 
+	clear: both;
+}
+
+.left {
+	float: left;
+	text-align: left;
+}
+
+.right {
+	float: right;
+	text-align: right;
+}
+
+.center {
+	overflow: auto;
+	margin: auto;
+	position: absolute;
+	top: 0; left: 0; bottom: 0; right: 0;
+}
+
+.player {
+	clear: both;
+}
+
+.left .player .card {
+	float: left;
+}
+
+.right .player .card {
+	float: right;
+}
+
+.card-face {
+	max-width: 100px;
+	max-height: 100px;
+}
+
+.community-cards {
+	width: 50%;
+	text-align: center;
+}
+
+
+.community-cards .card {
+	display: inline-block;
+}
+
+.pot {
+	width: 100%;
+	text-align: center;
+	height: 100px;
+	font-size: 2.5em;
+}
+
+
+#app {
+	position: relative;
+}
+
+#content {
+	background: url('../img/table.svg') center no-repeat;
+	background-size: contain;
+	width: 80%;
+	height: 80%;
 }

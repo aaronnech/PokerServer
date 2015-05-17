@@ -2,6 +2,8 @@ var React = require('react');
 var PokerClient = require('../PokerClient');
 var Constants = require('../Constants');
 
+var CardComponent = require('./CardComponent.jsx');
+
 /**
  * Encapsulates the entire application
  */
@@ -29,6 +31,7 @@ var PlayerComponent = React.createClass({
         api.unbind('FOLD', this);
         api.unbind('ALL_IN', this);
         api.unbind('BET', this);
+        api.unbind('BET_MADE', this);
     },
 
     /**
@@ -98,15 +101,30 @@ var PlayerComponent = React.createClass({
         var index = player.index;
         var name = player.name;
         var chips = this.state.chips;
-        var cards = this.state.cards;
+        var cards;
+
+        if (!this.state.cards) {
+            cards = (<div className='player-cards'>
+                        <CardComponent card={null} down={true} />
+                        <CardComponent card={null} down={true} />
+                    </div>);
+        } else {
+            var split = this.state.cards.split(',');
+            cards = (<div className='player-cards'>
+                        <CardComponent card={split[0]} down={false} />
+                        <CardComponent card={split[1]} down={false} />
+                    </div>);
+        }
+
         var action = this.state.lastAction;
 
         return (
-            <div className="player">
-                <p><strong>{name}</strong>:</p>
-                <p>Money: {chips}$</p>
-                <p>Cards: {cards ? cards : '-,-'}</p>
-                <p>Last Action: {action ? action : 'N/A'}</p>
+            <div className={"player " + (this.props.leftAlign ? 'left' : 'right')}>
+                <h2>{name}</h2>
+                {cards}
+                <div style={{'clear' : 'both'}}></div>
+                <p>Money: ${chips}.00 <br />
+                Last Action: {action ? action : 'N/A'}</p>
             </div>
         );
 	}

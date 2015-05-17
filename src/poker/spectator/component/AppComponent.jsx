@@ -3,6 +3,8 @@ var PokerClient = require('../PokerClient');
 var Constants = require('../Constants');
 
 var PlayerComponent = require('./PlayerComponent.jsx');
+var CommunityCardsComponent = require('./CommunityCardsComponent.jsx');
+var MoneyPotComponent = require('./MoneyPotComponent.jsx');
 
 /**
  * Encapsulates the entire application
@@ -97,14 +99,29 @@ var AppComponent = React.createClass({
                     <p>Found Game! Starting in {this.state.timeTilStart} seconds</p>
                 </div>
                 <div className={"screen " + (isSpectate ? "active" : "")}>
-                    <p>Community Cards: {this.state.revealedCards.join(',')}</p>
+                    <div className='left'>
+                        {this.state.players.map(function(player, i) {
+                            if (i < 3) {
+                                return (
+                                    <PlayerComponent leftAlign={true} player={player} API={this.state.API} />
+                                );
+                            }
+                        }.bind(this))}
+                    </div>
 
-                    {this.state.players.map(function(player, i) {
-                        return (
-                            <PlayerComponent player={player} API={this.state.API} />
-                        );
-                    }.bind(this))}
+                    <CommunityCardsComponent cards={this.state.revealedCards} />
+                    <MoneyPotComponent API={this.state.API} />
 
+                    <div className='right'>
+                        {this.state.players.map(function(player, i) {
+                            if (i >= 3) {
+                                return (
+                                    <PlayerComponent leftAlign={false} player={player} API={this.state.API} />
+                                );
+                            }
+                        }.bind(this))}
+                    </div>
+                    <div className='clear'></div>
                 </div>
             </div>
         );

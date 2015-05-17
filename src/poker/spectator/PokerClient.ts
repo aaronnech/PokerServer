@@ -47,8 +47,9 @@ class PokerClient {
 				}
 			}
 
-			if (index != -1)
+			if (index != -1) {
 				this.hooks[target].splice(index, 1)
+			}
 		}
 	}
 
@@ -111,6 +112,10 @@ class PokerClient {
 
 		this.sock.onmessage = (event) => {
 			this.onData(event.data);
+		};
+
+		this.sock.onclose = (event) => {
+
 		};
 	}
 }
