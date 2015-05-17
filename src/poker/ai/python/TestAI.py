@@ -63,5 +63,5 @@ class RandomAI(PokerAI):
 
 
 ai = RandomAI()
-ai.start('ws://localhost:1337/', 'MyIsRandom')
+ai.start('ws://pokerbots.herokuapp.com/', 'MyIsRandom')
 
