@@ -125,19 +125,24 @@ class PokerGame extends Game {
 	 */
 	private onPlayerTurn(player) {
 		this.currentTurn = null;
+
 		var uid = player.playerName;
+		var num = this.getClientNetIdByUid(uid);
+
 		var time = Math.random() * (PokerGame.MAX_SPECTATOR_DELAY - PokerGame.MIN_SPECTATOR_DELAY)
 			+ PokerGame.MIN_SPECTATOR_DELAY;
 
 		setTimeout(() => {
-			this.currentTurn = player;
 			if (this.getClientByUid(uid)) {
-				this.getClientByUid(uid).send(Protocol.YOUR_TURN);
+				this.currentTurn = player;
+				console.log('changing turns to player ' + num);
+				this.broadcastToPlayers(Protocol.TURN + ':' + num);
 
 				// Give the player a time limit, fold if they
 				// don't respond.
 				this.playerWait = setTimeout(() => {
-					player.fold();
+					if (this.getClientByUid(uid))
+						player.fold();
 				}, PokerGame.PLAYER_WAIT_TIME)
 			}
 		}, time);
@@ -258,11 +263,18 @@ class PokerGame extends Game {
 	 * @param {string} uid The client socket uid
 	 */
 	public removePlayer(uid : string) {
-		super.removePlayer(uid);
+		var removed = super.removePlayer(uid);
 
-		// If we don't have a player, exit now
-		if (!this.getClientByUid(uid)) return;
+		// We removed the last player, we should exit now
+		if (removed == 3) return 3;
 
+		// We removed a spectator, we have nothing to do.
+		if (removed == 1) return 1;
+
+		// The game is still going and we removed a player,
+		// time for book keeping.
+
+		// Poker specific removing:
 		this.engineAdapter.removePlayer(uid);
 
 		// See if we're in the middle of a game
@@ -270,10 +282,6 @@ class PokerGame extends Game {
 			// If they leave on their turn, do a fold() for them
 			if (this.currentTurn && this.currentTurn.playerName == uid) {
 				this.currentTurn.fold();
-			}
-
-			if (this.getPlayerCount() <= 1) {
-				this.onGameOver();
 			}
 		} else {
 			this.updateStartingQueue();

@@ -4,7 +4,7 @@ import Protocol = require('../../basic/Protocol');
  * The protocol that the poker server communicates with
  */
 class PokerProtocol extends Protocol {
-	public static YOUR_TURN : string = 'your-turn';
+	public static TURN : string = 'turn';
 	public static WHAT_WAS_THAT : string = 'what-was-that';
 	public static CALL : string = 'call';
 	public static BET : string = 'bet';

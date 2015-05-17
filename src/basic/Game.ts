@@ -136,7 +136,7 @@ class Game {
 		console.log(this.playerCount + ' players now in game ' + this.gameId);
 
 		if (this.players[uid])
-			client.send(Protocol.YOU_ARE + ':' + this.playerCount);
+			client.send(Protocol.YOU_ARE + ':' + (this.playerCount - 1));
 
 		this.checkStart();
 
@@ -232,14 +232,15 @@ class Game {
 	/**
 	 * Removes a player from the game
 	 * @param {string} uid The client socket uid
+	 * @return {number} 1 if a spectator was removed, 2 if
+	 *                    if a player was removed.
 	 */
 	public removePlayer(uid : string) {
 		// Remove any spectators with the id
-		if(this.spectators[uid])
+		if(this.spectators[uid]) {
 			this.spectators[uid] = undefined;
-
-		// If we don't have a player, exit now
-		if (!this.players[uid]) return;
+			return 1;
+		}
 
 		var num = this.playerNumbers[uid];
 
@@ -254,6 +255,12 @@ class Game {
 		// Remove from game
 		console.log('removing player ' + uid + ' from game ' + this.gameId);
 		this.broadcastToPlayers(Protocol.PLAYER_LEFT + ':' + num);
+
+		if (this.isGameStarted() && this.playerCount < this.minPlayers) {
+			this.onGameOver();
+		}
+
+		return 2;
 	}
 
 	/**

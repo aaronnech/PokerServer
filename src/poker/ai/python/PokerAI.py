@@ -9,7 +9,7 @@ COMMANDS = {
     'NOT_STARTED' : 'not-started',
     'NOT_YOUR_TURN' : 'not-your-turn',
     'GAME_OVER' : 'game-over',
-    'YOUR_TURN' : 'your-turn',
+    'TURN' : 'turn',
     'WHAT_WAS_THAT' : 'what-was-that',
     'CALL' : 'call',
     'BET' : 'bet',
@@ -48,28 +48,31 @@ class PokerClient(WebSocketClient):
             self.AI.win(int(right))
         elif left == COMMANDS['GAME_OVER']:
             self.AI.gameOver()
-        elif left == COMMANDS['YOUR_TURN'] or left == COMMANDS['WHAT_WAS_THAT']:
-            self.AI.yourTurn()
+        elif left == COMMANDS['TURN']:
+            right = s.split(':')[1]
+            if self.AI.netId == right:
+                self.AI.yourTurn()
         elif left == COMMANDS['DEAL']:
             right = s.split(':')[1]
-            self.AI.deal(right.split(','));
+            self.AI.deal(right.split(','))
         elif left == COMMANDS['BET_MADE']:
             amt = s.split(':')[1]
             who = s.split(':')[2]
-            self.AI.betMade(amt, who);
+            self.AI.betMade(amt, who)
         elif left == COMMANDS['SHOW_CARD']:
             right = s.split(':')[1]
-            self.AI.showCard(right);
+            self.AI.showCard(right)
         elif left in ['fold', 'check', 'call', 'bet', 'all-in']:
             index = s.split(':')
             index = index[len(index) - 1]
             self.AI.playerAction(index, m)
         elif left == COMMANDS['YOU_ARE']:
             right = s.split(':')[1]
-            self.AI.identity(right);
+            self.AI.netId = right
+            self.AI.identity(right)
         elif left == COMMANDS['GAME_STARTED']:
             right = s.split(':')[1]
-            self.AI.gameStart(right);
+            self.AI.gameStart(right)
 
 class Response:
     """ Simple class to wrap responses and pass them on """
