@@ -21,6 +21,8 @@ var CommunityCardsComponent = React.createClass({
     componentWillUnmount : function() {
         var api = this.props.API;
         api.unbind('BET_MADE', this);
+        api.unbind('GAME_OVER', this);
+        api.unbind('GAME_STARTED', this);
     },
 
     /**
@@ -31,6 +33,14 @@ var CommunityCardsComponent = React.createClass({
 
         api.bind('BET_MADE', this, function(action, amt, person) {
             this.setState({money : this.state.money + parseInt(amt)});
+        });
+
+        api.bind('GAME_OVER', this, function(action, amt, person) {
+            this.setState({money : 0});
+        });
+
+        api.bind('GAME_STARTED', this, function(action, amt, person) {
+            this.setState({money : 0});
         });
     },
 
